@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gameday Tactics</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap');
+
+        :root {
+            --bg-color: #030508;
+            --grid-line: rgba(255, 255, 255, 0.03);
+            --accent: #38bdf8;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            /* Infinite Grid Background */
+            background-image:
+                linear-gradient(var(--grid-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 60px 60px;
+            background-attachment: fixed;
+            /* Keep grid fixed while scrolling */
+            color: var(--text-primary);
+            min-height: 100vh;
+            /* Allow scrolling */
+            overflow-x: hidden;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            /* Remove justify-content: center to allow top-down flow */
+            position: relative;
+        }
+
+        /* Vignette to soften edges */
+        body::after {
+            content: '';
+            position: fixed;
+            /* Fixed vignette */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, transparent 0%, var(--bg-color) 90%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Canvas for "Light Stars" */
+        #starCanvas {
+            position: fixed;
+            /* Fixed stars */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+            /* Let clicks pass through */
+        }
+
+        /* Main Content */
+        .content-wrapper {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            width: 100%;
+            max-width: 1200px;
+            /* Increased width */
+            padding: 20px;
+            padding-top: 80px;
+            /* Space from top */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* Remove fixed height */
+        }
+
+        .hero-title {
+            font-family: 'Outfit', sans-serif;
+            /* Big, Neat, Beautiful */
+            font-size: clamp(1.8rem, 8vw, 5rem);
+            font-weight: 900;
+            margin: 0 0 10px 0;
+            letter-spacing: -2px;
+            text-transform: uppercase;
+            white-space: nowrap;
+            /* Force single line */
+            background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 10px 30px rgba(56, 189, 248, 0.2);
+        }
+
+        .hero-subtitle {
+            color: var(--accent);
+            font-size: 1rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 60px;
+            font-weight: 700;
+            opacity: 0.9;
+            font-family: 'Rajdhani', sans-serif;
+        }
+
+        /* Container allowing separated elements */
+        .layout-container {
+            width: 100%;
+            max-width: 800px;
+            /* Keep content centered and readable */
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            /* Space between the separated blocks */
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+            /* Remove max-height */
+        }
+
+        .layout-container.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 1. SEPARATED SEARCH BAR */
+        .search-wrapper {
+            background: rgba(10, 15, 25, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 8px 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            outline: none;
+            text-align: left;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 500;
+        }
+
+        /* 2. SEPARATED GRID (No Background) */
+        .match-list-container {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding-right: 5px;
+            align-content: start;
+            /* margin-bottom: 20px; */
+            /* Space before footer */
+        }
+
+        .match-list-container::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .match-list-container::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 2px;
+        }
+
+        .match-card {
+            background: rgba(10, 15, 25, 0.75);
+            /* Individual Backs */
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            /* Distinct border */
+            border-left: 5px solid var(--team-color, var(--accent));
+            /* Dynamic Left accent bar */
+            border-radius: 12px;
+            padding: 30px 35px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: row;
+            /* Horizontal */
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .match-card:hover {
+            transform: translateY(-5px) scale(1.01);
+            border-color: rgba(255, 255, 255, 0.1);
+            background: rgba(10, 15, 25, 0.9);
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6);
+        }
+
+        /* Hover Glow */
+        .match-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 100%;
+            background: var(--team-color, var(--accent));
+            opacity: 0.05;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .match-card:hover::before {
+            width: 100%;
+        }
+
+        .fixture {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.7rem;
+            letter-spacing: -1px;
+            color: #ffffff;
+        }
+
+        .meta {
+            font-size: 0.95rem;
+            color: #94a3b8;
+            margin-top: 6px;
+            font-weight: 500;
+            font-family: 'Rajdhani', sans-serif;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: var(--accent);
+            font-family: 'Rajdhani', sans-serif;
+            text-shadow:
+                0 0 10px rgba(56, 189, 248, 0.3),
+                0 0 20px rgba(56, 189, 248, 0.2);
+        }
+
+        /* 3. SEPARATED FOOTER */
+        .request-wrapper {
+            background: rgba(10, 15, 25, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            /* Stacked */
+            gap: 20px;
+            align-items: center;
+            /* SCROLL GAP */
+            margin-top: 40vh;
+            /* Pushes it well below the fold */
+            margin-bottom: 100px;
+        }
+
+        .request-label {
+            color: #94a3b8;
+            font-size: 1rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .req-input {
+            width: 100%;
+            padding: 18px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: white;
+            outline: none;
+            text-align: center;
+            font-size: 1.1rem;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .req-btn {
+            width: 100%;
+            background: var(--accent);
+            color: #0f172a;
+            font-weight: 800;
+            border: none;
+            padding: 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .req-btn:hover {
+            filter: brightness(1.1);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(56, 189, 248, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="starCanvas"></canvas>
+
+    <div class="content-wrapper">
+        <h1 class="hero-title"><span id="typewriter"></span></h1>
+        <p class="hero-subtitle">Pro Football Analytics</p>
+
+        <!-- SEPARATE FLOATING BLOCK -->
+        <div id="layoutContainer" class="layout-container">
+
+            <!-- 1. Search Bar -->
+            <div class="search-wrapper">
+                <i class="fas fa-search" style="color:var(--text-secondary); opacity:0.7;"></i>
+                <input type="text" id="searchInput" class="search-input" placeholder="Search Match Archive..."
+                    onkeyup="filterMatches()">
+            </div>
+
+            <!-- 2. Match List (Horizontal) -->
+            <div class="match-list-container" id="matchList">
+                {% for match in matches %}
+                <a href="/match/{{ match.filename }}" class="match-card" style="--team-color: {{ match.home_color }};">
+                    <div>
+                        <div class="fixture">{{ match.fixture }}</div>
+                        <div class="meta">{{ match.competition }} • {{ match.date }}</div>
+                    </div>
+                    <div class="score">{{ match.score }}</div>
+                </a>
+                {% endfor %}
+            </div>
+
+            <!-- 3. Request Footer (Stacked) -->
+            <div class="request-wrapper">
+                <div class="request-label">Missing a match? Request it below</div>
+                <input type="text" id="reqInput" class="req-input" placeholder="e.g. Real Madrid vs Barcelona">
+                <input type="email" id="reqEmail" class="req-input" placeholder="Your Email Address">
+                <button class="req-btn" id="reqSubmitBtn" onclick="requestMatch()">SUBMIT REQUEST</button>
+                <div id="reqStatus"
+                    style="font-size: 0.9rem; min-height: 20px; color: var(--accent); font-weight:600; margin-top: 10px;">
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- 1. LIGHT STARS & ANTI-GRAVITY ---
+        const canvas = document.getElementById('starCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let stars = [];
+        let mouse = { x: -1000, y: -1000 };
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            initStars();
+        }
+        window.addEventListener('resize', resize);
+        window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+
+        class Star {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.size = Math.random() * 2 + 0.5;
+                this.baseX = this.x;
+                this.baseY = this.y;
+                this.color = Math.random() > 0.8 ? '#38bdf8' : '#ffffff';
+            }
+
+            update() {
+                // REPULSION
+                const dx = mouse.x - this.x;
+                const dy = mouse.y - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const forceDistance = 150;
+
+                if (distance < forceDistance) {
+                    const force = (forceDistance - distance) / forceDistance;
+                    const angle = Math.atan2(dy, dx);
+                    const pushX = Math.cos(angle) * force * 15;
+                    const pushY = Math.sin(angle) * force * 15;
+                    this.vx -= pushX * 0.1;
+                    this.vy -= pushY * 0.1;
+                }
+
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vx *= 0.92; this.vy *= 0.92;
+                if (Math.abs(this.vx) < 0.2) this.vx += (Math.random() - 0.5) * 0.05;
+                if (Math.abs(this.vy) < 0.2) this.vy += (Math.random() - 0.5) * 0.05;
+
+                if (this.x < 0) this.x = width;
+                if (this.x > width) this.x = 0;
+                if (this.y < 0) this.y = height;
+                if (this.y > height) this.y = 0;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 8; ctx.shadowColor = this.color;
+            }
+        }
+
+        function initStars() {
+            stars = [];
+            for (let i = 0; i < 150; i++) stars.push(new Star());
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.lineWidth = 0.5;
+            for (let i = 0; i < stars.length; i++) {
+                stars[i].update();
+                stars[i].draw();
+            }
+            requestAnimationFrame(animate);
+        }
+        resize();
+        animate();
+
+
+        // --- UI UTILS ---
+        const txt = "GAMEDAY TACTICS";
+        const el = document.getElementById('typewriter');
+        let idx = 0;
+        function type() {
+            if (idx < txt.length) {
+                el.innerHTML += txt.charAt(idx); idx++;
+                setTimeout(type, 80);
+            } else {
+                document.getElementById('layoutContainer').classList.add('visible');
+            }
+        }
+        setTimeout(type, 300);
+
+        function filterMatches() {
+            const val = document.getElementById('searchInput').value.toUpperCase();
+            const cards = document.querySelectorAll('.match-card');
+            cards.forEach(c => {
+                c.style.display = c.innerText.toUpperCase().includes(val) ? 'flex' : 'none';
+            });
+        }
+
+        async function requestMatch() {
+            const input = document.getElementById('reqInput');
+            const emailInput = document.getElementById('reqEmail');
+            const status = document.getElementById('reqStatus');
+            const btn = document.getElementById('reqSubmitBtn');
+
+            const matchName = input.value.trim();
+            const userEmail = emailInput.value.trim();
+
+            // 1. Validation
+            if (!matchName) {
+                status.innerText = "Please enter match name.";
+                status.style.color = '#ef4444';
+                return;
+            }
+            if (!userEmail || !userEmail.includes('@')) {
+                status.innerText = "Please enter a valid email address.";
+                status.style.color = '#ef4444';
+                return;
+            }
+
+            // 2. Loading State
+            status.innerText = "Sending request...";
+            status.style.color = 'var(--accent)';
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
+
+            try {
+                // 3. API Call
+                const response = await fetch('/api/match-request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ match: matchName, email: userEmail })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    status.innerText = data.message;
+                    status.style.color = '#38bdf8';
+                    input.value = '';
+                    emailInput.value = '';
+                } else {
+                    status.innerText = data.error || "Failed to send request.";
+                    status.style.color = '#ef4444';
+                }
+            } catch (error) {
+                status.innerText = "Server unreachable. Please check backend.";
+                status.style.color = '#ef4444';
+                console.error('Fetch error:', error);
+            } finally {
+                // 4. Reset Button
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            }
+        }
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{{ home.name }} vs {{ away.name }} - Tactical Analysis</title>
+    <!-- Use only match-analysis.css as requested ("Import ONLY here") and potentially global if needed for resets, 
+         but user said "Return only the updated match page + this CSS file" implying self-contained or minimal dependencies.
+         I will keep style.css if it has resets, but prioritize match-analysis.css. 
+         Users request: "Import it ONLY in the homepage template" was for the previous task. 
+         For this task: "Create match-analysis.css and import ONLY here". 
+         I will keep global styles just in case but ensure new styles override.
+    -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/match-analysis.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="analysis-screen">
+        <!-- 1. MODULAR HEADER (Broadcast Style) -->
+        <div class="top-bar">
+            <div class="header-left">
+                <a href="/" class="exit-btn">
+                    <i class="fas fa-arrow-left"></i> EXIT DASHBOARD
+                </a>
+            </div>
+
+            <div class="header-stats">
+                <div class="stat-item">
+                    <span class="stat-val">{{ h_stats.shots }}</span>
+                    <span class="stat-label">SHOTS</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-val">{{ h_stats.possession }}%</span>
+                    <span class="stat-label">POSS</span>
+                </div>
+
+                <div class="team-display team-home">{{ home.name }}</div>
+
+                <div class="score-box">{{ score }}</div>
+
+                <div class="team-display team-away">{{ away.name }}</div>
+
+                <div class="stat-item">
+                    <span class="stat-val">{{ a_stats.possession }}%</span>
+                    <span class="stat-label">POSS</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-val">{{ a_stats.shots }}</span>
+                    <span class="stat-label">SHOTS</span>
+                </div>
+            </div>
+
+            <div class="header-right"></div>
+        </div>
+
+        <!-- 2. TEAM BAR (Block Toggle) -->
+        <div class="team-switch"
+            style="--home-color: {{ h_color }}; --away-color: {{ a_color }}; --home-text: {{ h_text }}; --away-text: {{ a_text }};">
+            <button class="switch-btn active home" data-team="home" onclick="loadAnalysis('home', this)">
+                <i class="fas fa-flag"></i> {{ home.name }}
+            </button>
+            <button class="switch-btn away" data-team="away" onclick="loadAnalysis('away', this)">
+                <i class="fas fa-flag-checkered"></i> {{ away.name }}
+            </button>
+        </div>
+
+        <!-- 3. MAIN CONTENT (Side-by-Side Flex) -->
+        <div class="main-content">
+            <div class="viz-panel" id="vizPanel">
+                <div id="loading-spinner" class="spinner" style="display:none; position: absolute;"></div>
+                <img id="graph-image" class="viz-graph" src="" style="display:none;">
+                <div id="empty-state" style="color: #475569; font-style: italic;">
+                    Loading analysis...
+                </div>
+            </div>
+
+            <!-- Unified Intelligence Sidebar -->
+            <div id="rightSidebar" class="sidebar collapsed">
+                <!-- Tactical Report View -->
+                <div id="report-view" class="sidebar-view">
+                    <div class="sidebar-header">
+                        <div class="header-title">
+                            <i class="fas fa-chart-line"></i> TACTICAL REPORT
+                        </div>
+                        <button class="close-sidebar" onclick="closeSidebar()">&times;</button>
+                    </div>
+
+                    <!-- Filter Slider -->
+                    <div class="sidebar-filter">
+                        <div class="filter-label">
+                            <span>PASSING THRESHOLD</span>
+                            <span id="threshold-val" class="highlight">3+</span>
+                        </div>
+                        <input type="range" id="pass-slider" min="1" max="10" value="3"
+                            oninput="updatePassThreshold(this.value)" onchange="loadAnalysis(currentTeam)">
+                    </div>
+
+                    <div class="sidebar-content" id="analysis-text">
+                        <div class="loading-text" style="color: #475569; padding: 20px;">
+                            Requesting tactical evaluation...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Chat View -->
+                <div id="chat-view" class="sidebar-view" style="display: none;">
+                    <div class="sidebar-header">
+                        <div class="header-title">
+                            <i class="fas fa-robot"></i> AI ASSISTANT
+                        </div>
+                        <button class="close-sidebar" onclick="closeSidebar()">&times;</button>
+                    </div>
+                    <div class="sidebar-content" id="aiBody">
+                        <div class="ai-message">
+                            How can I help you analyze the tactics of this match?
+                        </div>
+                    </div>
+                    <div class="ai-input">
+                        <input type="text" id="ai-chat-input" placeholder="Ask a question...">
+                        <button id="sendAIButton" onclick="sendChatMessage()">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. FLOATING ACTION BUTTONS -->
+    <div class="fab-container" id="fabContainer">
+        <button class="fab-btn fab-analysis" id="fab-analysis" onclick="toggleSidebar('analysis')"
+            title="Tactical Analysis">
+            <i class="fas fa-chart-line"></i>
+        </button>
+        <button class="fab-btn fab-ai" id="fab-ai" onclick="toggleSidebar('chat')" title="Open MatchBot">
+            <i class="fas fa-robot"></i>
+        </button>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        // --- 1. LIGHT STARS & ANTI-GRAVITY ---
+        // (Removing stars as they weren't in the reference image, keeping simple background)
+
+        const filename = "{{ filename }}";
+        let currentTeam = 'home';
+
+        // --- UI HANDLERS ---
+        const sidebar = document.getElementById("rightSidebar");
+        const reportView = document.getElementById("report-view");
+        const chatView = document.getElementById("chat-view");
+        const fabContainer = document.getElementById("fabContainer");
+
+        function toggleSidebar(type) {
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            const isShowingReport = reportView.style.display !== 'none';
+            const isShowingChat = chatView.style.display !== 'none';
+
+            // Logic:
+            // 1. If sidebar is collapsed -> Expand it and show correct view
+            // 2. If sidebar is open:
+            //    - If same type clicked -> Collapse sidebar
+            //    - If different type clicked -> Just switch the internal view
+
+            if (isCollapsed) {
+                showView(type);
+                sidebar.classList.remove('collapsed');
+                fabContainer.classList.add('hidden'); // Hide FABs when opening
+            } else {
+                if ((type === 'analysis' && isShowingReport) || (type === 'chat' && isShowingChat)) {
+                    closeSidebar();
+                } else {
+                    showView(type);
+                }
+            }
+        }
+
+        function closeSidebar() {
+            sidebar.classList.add('collapsed');
+            fabContainer.classList.remove('hidden'); // Show FABs when closing
+        }
+
+        function showView(type) {
+            if (type === 'analysis') {
+                reportView.style.display = 'flex';
+                chatView.style.display = 'none';
+                document.getElementById('fab-analysis').classList.add('active');
+                document.getElementById('fab-ai').classList.remove('active');
+            } else {
+                reportView.style.display = 'none';
+                chatView.style.display = 'flex';
+                document.getElementById('fab-analysis').classList.remove('active');
+                document.getElementById('fab-ai').classList.add('active');
+                // Focus chat input when AI panel opens
+                setTimeout(() => document.getElementById('ai-chat-input').focus(), 400);
+            }
+        }
+
+        window.onclick = function (event) {
+            // No longer closing on window click as it's a layout element now
+        }
+
+        // --- AI CHAT FUNCTIONALITY ---
+        const chatInput = document.getElementById('ai-chat-input');
+        const aiBody = document.getElementById('aiBody');
+
+        function addChatMessage(text, isUser = false) {
+            const msg = document.createElement('div');
+            msg.className = 'ai-message' + (isUser ? ' user-message' : '');
+
+            if (!isUser) {
+                msg.innerHTML = text
+                    .replace(/\n/g, '<br>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            } else {
+                msg.innerText = text;
+            }
+
+            aiBody.appendChild(msg);
+            aiBody.scrollTop = aiBody.scrollHeight;
+            return msg;
+        }
+
+        async function sendChatMessage() {
+            const question = chatInput.value.trim();
+            if (!question) return;
+
+            chatInput.value = '';
+            addChatMessage(question, true);
+
+            const loadingMsg = addChatMessage('Analyzing...', false);
+            loadingMsg.classList.add('loading');
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question, filename })
+                });
+                const data = await response.json();
+                aiBody.removeChild(loadingMsg);
+
+                if (data.answer) addChatMessage(data.answer);
+                else addChatMessage("Sorry, I couldn't process that.");
+            } catch (e) {
+                if (loadingMsg.parentNode) aiBody.removeChild(loadingMsg);
+                addChatMessage("Communication error. Please try again.");
+            }
+        }
+
+        function updatePassThreshold(val) {
+            const thresholdDisplay = document.getElementById('threshold-val');
+            if (thresholdDisplay) thresholdDisplay.textContent = val + '+';
+        }
+
+        if (chatInput) {
+            chatInput.onkeypress = (e) => { if (e.key === 'Enter') sendChatMessage(); };
+        }
+
+        // --- TACTICAL REPORT LOGIC ---
+        function updateTacticalReport(text) {
+            const el = document.getElementById("analysis-text");
+            if (!el) return;
+
+            // Tactical Formatting: Cleaning up markdown patterns
+            let html = text
+                .replace(/^### (.*$)/gim, '<div style="color:var(--text-primary); font-weight:800; margin-bottom:15px; font-family:Outfit, sans-serif;">$1</div>')
+                .replace(/^[*-] \*\*(.*?)\*\*(.*)/gim, '<div class="report-chunk"><strong>$1</strong>$2</div>')
+                .replace(/^[*-] (.*)/gim, '<div class="report-chunk">$1</div>')
+                .replace(/\*\*(.*?)\*\*/g, '<span style="color:var(--text-primary); font-weight:700;">$1</span>')
+                .replace(/\n\n/g, '<br><br>')
+                .replace(/\n/g, '<br>');
+
+            el.innerHTML = html;
+        }
+
+        async function loadAnalysis(teamType, btnElement) {
+            currentTeam = teamType;
+
+            // Update UI State
+            if (btnElement) {
+                document.querySelectorAll('.switch-btn').forEach(b => b.classList.remove('active'));
+                btnElement.classList.add('active');
+            }
+
+            const spinner = document.getElementById('loading-spinner');
+            const emptyState = document.getElementById('empty-state');
+            const img = document.getElementById('graph-image');
+
+            if (spinner) spinner.style.display = 'block';
+            if (emptyState) emptyState.style.display = 'none';
+            if (img) img.style.opacity = '0.5';
+
+            try {
+                updateTacticalReport(`Talking to the scout about ${teamType.toUpperCase()}...`);
+
+                const minPasses = document.getElementById('pass-slider')?.value || 3;
+
+                const response = await fetch('/api/get_analysis', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename: filename, team_type: teamType, min_passes: minPasses })
+                });
+
+                const data = await response.json();
+
+                // Apply dynamic team color to the report
+                if (data.active_color) {
+                    document.getElementById('rightSidebar').style.setProperty('--team-color', data.active_color);
+                }
+
+                if (img) {
+                    img.src = "data:image/png;base64," + data.image;
+                    img.style.display = 'block';
+                    img.style.opacity = '1';
+                }
+
+                if (data.ai) updateTacticalReport(data.ai);
+                if (spinner) spinner.style.display = 'none';
+
+            } catch (error) {
+                console.error('Error:', error);
+                if (spinner) spinner.style.display = 'none';
+                updateTacticalReport("Sorry, we couldn't get the scout report right now.");
+            }
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            const homeBtn = document.querySelector('.switch-btn[data-team="home"]');
+            if (homeBtn) loadAnalysis('home', homeBtn);
+        });
+    </script>
+</body>
+
+</html>
