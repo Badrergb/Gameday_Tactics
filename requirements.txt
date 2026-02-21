@@ -6,4 +6,6 @@ google-generativeai==0.3.2
 matplotlib==3.8.2
 mplsoccer==1.2.3
 chompjs==1.1.2
+
 groq==0.4.2
+gunicorn
