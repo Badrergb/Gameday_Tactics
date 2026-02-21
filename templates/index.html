@@ -94,13 +94,12 @@
             margin: 0 0 10px 0;
             letter-spacing: -2px;
             text-transform: uppercase;
-            white-space: nowrap;
-            /* Force single line */
             background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
             text-shadow: 0 10px 30px rgba(56, 189, 248, 0.2);
+            /* Remove white-space: nowrap to allow wrapping on mobile */
         }
 
         .hero-subtitle {
@@ -326,6 +325,48 @@
             -webkit-box-shadow: 0 0 0px 1000px #0a0f19 inset !important;
             -webkit-text-fill-color: white !important;
             transition: background-color 5000s ease-in-out 0s;
+        }
+
+        /* --- MOBILE RESPONSIVENESS --- */
+        @media (max-width: 768px) {
+            .content-wrapper {
+                padding: 15px;
+                padding-top: 50px;
+            }
+
+            .hero-subtitle {
+                margin-bottom: 40px;
+                letter-spacing: 2px;
+            }
+
+            .match-card {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+                padding: 20px;
+            }
+
+            .fixture {
+                font-size: 1.4rem;
+            }
+
+            .score {
+                font-size: 1.5rem;
+            }
+
+            .request-wrapper {
+                margin-top: 100px;
+                /* Reduced from 40vh */
+                padding: 30px 20px;
+            }
+
+            .search-wrapper {
+                padding: 5px 15px;
+            }
+
+            .search-input {
+                font-size: 1rem;
+            }
         }
     </style>
 </head>
