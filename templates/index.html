@@ -509,47 +509,73 @@
             btn.style.cursor = 'not-allowed';
 
             try {
-                // 3. API Call (Using absolute path to rule out resolution issues)
+                // 1. First Attempt: Backend API (For Logging)
                 const apiUrl = window.location.origin + '/api/match-request';
                 const response = await fetch(apiUrl, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ match: matchName, email: userEmail })
                 });
 
                 const rawText = await response.text();
                 let data;
-                try {
-                    data = JSON.parse(rawText);
-                } catch (e) {
-                    status.innerText = `Network Error (${response.status}): Invalid Response.`;
-                    status.style.color = '#ef4444';
-                    console.error('Invalid JSON Response:', rawText);
-                    return;
-                }
+                try { data = JSON.parse(rawText); } catch (e) { data = { error: rawText }; }
 
                 if (response.ok) {
-                    status.innerText = data.message || "Request sent successfully!";
+                    status.innerText = "Request received! Processing...";
                     status.style.color = '#38bdf8';
-                    input.value = '';
-                    emailInput.value = '';
                 } else {
-                    status.innerText = data.error || "Failed to send request.";
-                    status.style.color = '#ef4444';
+                    throw new Error("Server Blocked");
                 }
             } catch (error) {
-                status.innerText = "Connection Error: " + error.message;
-                status.style.color = '#ef4444';
-                console.error('Detailed Fetch error:', error);
-            } finally {
-                // 4. Reset Button
-                btn.disabled = false;
-                btn.style.opacity = '1';
-                btn.style.cursor = 'pointer';
+                // 2. ULTIMATE FALLBACK: Browser-Direct Submission (Port 443 - Never Blocked)
+                console.log("⚠️ Server blocked. Switching to Browser Direct Fallback...");
+                status.innerText = "Connecting to Secure Email Gateway...";
+
+                // Create a dynamic form to submit directly from the browser
+                const fallbackForm = document.createElement('form');
+                fallbackForm.method = 'POST';
+                fallbackForm.action = `https://formsubmit.co/${emailInput.value}`; // Send to user for confirmation if needed
+                fallbackForm.target = '_blank'; // Open in new tab so they don't leave page
+
+                const hiddenMatch = document.createElement('input');
+                hiddenMatch.type = 'hidden';
+                hiddenMatch.name = 'Match Requested';
+                hiddenMatch.value = matchName;
+
+                const hiddenEmail = document.createElement('input');
+                hiddenEmail.type = 'hidden';
+                hiddenEmail.name = 'Contact Email';
+                hiddenEmail.value = userEmail;
+
+                const hiddenAdmin = document.createElement('input');
+                hiddenAdmin.type = 'hidden';
+                hiddenAdmin.name = '_cc'; // Copy to admin
+                hiddenAdmin.value = 'narayananbadre@gmail.com';
+
+                const hiddenSubject = document.createElement('input');
+                hiddenSubject.type = 'hidden';
+                hiddenSubject.name = '_subject';
+                hiddenSubject.value = `⚽ New Match Request: ${matchName}`;
+
+                fallbackForm.appendChild(hiddenMatch);
+                fallbackForm.appendChild(hiddenEmail);
+                fallbackForm.appendChild(hiddenAdmin);
+                fallbackForm.appendChild(hiddenSubject);
+
+                document.body.appendChild(fallbackForm);
+                fallbackForm.submit();
+                document.body.removeChild(fallbackForm);
+
+                status.innerText = "Security Check: Finalize in the new tab!";
+                status.style.color = '#fbbf24';
+                return;
             }
+
+            status.innerText = "Request sent successfully!";
+            status.style.color = '#38bdf8';
+            input.value = '';
+            emailInput.value = '';
         }
 
     </script>
