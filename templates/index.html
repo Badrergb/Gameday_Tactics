@@ -520,7 +520,16 @@
                     body: JSON.stringify({ match: matchName, email: userEmail })
                 });
 
-                const data = await response.json();
+                const rawText = await response.text();
+                let data;
+                try {
+                    data = JSON.parse(rawText);
+                } catch (e) {
+                    status.innerText = `Network Error (${response.status}): Invalid Response.`;
+                    status.style.color = '#ef4444';
+                    console.error('Invalid JSON Response:', rawText);
+                    return;
+                }
 
                 if (response.ok) {
                     status.innerText = data.message || "Request sent successfully!";
@@ -532,7 +541,7 @@
                     status.style.color = '#ef4444';
                 }
             } catch (error) {
-                status.innerText = "Error: " + error.message;
+                status.innerText = "Connection Error: " + error.message;
                 status.style.color = '#ef4444';
                 console.error('Detailed Fetch error:', error);
             } finally {
