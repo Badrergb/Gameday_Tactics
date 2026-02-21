@@ -13,6 +13,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from flask import Flask, render_template, request, jsonify
+from flask_cors import CORS
 from datetime import datetime, timedelta
 
 # --- AI LIBRARY INTEGRATION ---
@@ -32,6 +33,7 @@ from mplsoccer import Pitch
 
 # Initialize the Flask Application
 app = Flask(__name__)
+CORS(app) # Enable CORS for all routes
 
 # ==============================================================================
 # 📧 EMAIL CONFIGURATION (NOTIFICATION SYSTEM)
@@ -814,29 +816,7 @@ def get_analysis_api():
     cache[key] = res
     return jsonify(res)
 
-@app.route('/api/send_request', methods=['POST'])
-def send_request():
-    """
-    Handles user requests for new matches.
-    Sends an email to the admin and logs to the console.
-    """
-    try:
-        data = request.json
-        match_request = data.get('matchData', 'Unknown Request')
-        print(f"\n📨 NEW MATCH REQUEST RECEIVED: {match_request}")
-        
-        # Try sending email
-        success = send_email_notification(match_request)
-        
-        if success:
-            return jsonify({"status": "success", "message": "Email sent"})
-        else:
-            # Fallback if email fails (still logs to console)
-            return jsonify({"status": "success", "message": "Logged to console"}), 200
-            
-    except Exception as e:
-        print(f"Request Error: {e}")
-        return jsonify({"status": "error"}), 500
+# AI Chat logic follows...
 
 # ==============================================================================
 # 🤖 CHATBOT ENDPOINT (Uses CHAT_API_KEY)
