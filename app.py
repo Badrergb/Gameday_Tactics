@@ -588,14 +588,16 @@ def get_tactical_insight(target_team, mvp, h_name, a_name, score, h_stats, a_sta
 # 🚀 NEW ROUTES (STRICT REPORTING & REQUESTS)
 # ==============================================================================
 
-@app.route('/api/match-request', methods=['POST'])
+@app.route('/api/match-request', methods=['POST'], strict_slashes=False)
 def match_request_api():
     """
     Production-ready match request endpoint.
     Includes validation, rate limiting, and sanitization.
     """
     try:
-        ip = request.remote_addr
+        # Get REAL IP behind Render proxy
+        ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
+        
         if is_rate_limited(ip):
             return jsonify({"error": "Too many requests. Please wait a few minutes."}), 429
 
@@ -779,7 +781,7 @@ def match(filename):
                            h_color=h_col, a_color=a_col,
                            h_text=h_text, a_text=a_text,
                            filename=filename, score=score)
-@app.route('/api/get_analysis', methods=['POST'])
+@app.route('/api/get_analysis', methods=['POST'], strict_slashes=False)
 def get_analysis_api():
     d = request.json
 
@@ -821,7 +823,7 @@ def get_analysis_api():
 # ==============================================================================
 # 🤖 CHATBOT ENDPOINT (Uses CHAT_API_KEY)
 # ==============================================================================
-@app.route('/api/chat', methods=['POST'])
+@app.route('/api/chat', methods=['POST'], strict_slashes=False)
 def chat_api():
     try:
         # 1. Check Library
