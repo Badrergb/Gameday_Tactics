@@ -246,27 +246,30 @@ def send_match_request_email_v2(match_name, user_email, ip):
         msg['From'] = SENDER_EMAIL
         msg['To'] = RECEIVER_EMAIL
         msg['Subject'] = f"New Match Request: {match_name}"
-        msg.add_header('reply-to', user_email) # IMPORTANT: replyTo
+        msg.add_header('reply-to', user_email) 
 
-        body = f"""New match requested.
-
-Match: {match_name}
-Requested By: {user_email}
-Time: {timestamp}
-IP: {ip}
-
-Reply directly to this email to respond to the user."""
-        
+        body = f"""New match requested.\n\nMatch: {match_name}\nRequested By: {user_email}\nTime: {timestamp}\nIP: {ip}\n\nReply directly to this email to respond to the user."""
         msg.attach(MIMEText(body, 'plain'))
 
-        server = smtplib.SMTP('smtp.gmail.com', 587, timeout=10)
-        server.starttls()
-        server.login(SENDER_EMAIL, SENDER_PASSWORD)
-        server.sendmail(SENDER_EMAIL, RECEIVER_EMAIL, msg.as_string())
-        server.quit()
+        # Try Port 587 (TLS) first, then fallback to 465 (SSL)
+        try:
+            print(f"📡 SMTP: Trying 587 (TLS)...")
+            server = smtplib.SMTP('smtp.gmail.com', 587, timeout=15)
+            server.starttls()
+            server.login(SENDER_EMAIL, SENDER_PASSWORD)
+            server.sendmail(SENDER_EMAIL, RECEIVER_EMAIL, msg.as_string())
+            server.quit()
+        except Exception as e587:
+            print(f"⚠️ SMTP 587 Failed: {e587}. Trying 465 (SSL)...")
+            server = smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=15)
+            server.login(SENDER_EMAIL, SENDER_PASSWORD)
+            server.sendmail(SENDER_EMAIL, RECEIVER_EMAIL, msg.as_string())
+            server.quit()
+            
+        print(f"✅ EMAIL SUCCESS: {match_name}")
         return True
     except Exception as e:
-        print(f"Email Error: {e}")
+        print(f"❌ CRITICAL EMAIL ENGINE ERROR: {e}")
         return False
 
 # ==============================================================================
