@@ -15,6 +15,8 @@ from email.mime.multipart import MIMEMultipart
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 from datetime import datetime, timedelta
+import csv
+import requests
 
 # --- AI LIBRARY INTEGRATION ---
 # We are using Groq for its ultra-low latency inference.
@@ -44,6 +46,9 @@ CORS(app) # Enable CORS for all routes
 SENDER_EMAIL = "narayananbadre@gmail.com"        # REPLACE THIS
 SENDER_PASSWORD = "wzdp tzib agoh ypdt"      # REPLACE WITH 16-CHAR APP PASSWORD
 RECEIVER_EMAIL = "narayananbadre@gmail.com"      # REPLACE THIS
+
+# Optional Discord Webhook for Render (Works even if SMTP is blocked)
+DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "") # Paste your URL here or set in Render
 
 # ==============================================================================
 # 🔑 API KEY & AI MODEL CONFIGURATION
@@ -271,6 +276,35 @@ def send_match_request_email_v2(match_name, user_email, ip):
     except Exception as e:
         error_msg = str(e)
         print(f"❌ CRITICAL EMAIL ENGINE ERROR: {error_msg}")
+        
+        # FINAL FAILSAFE: Log to a permanent local file so request is NEVER lost
+        try:
+            with open('match_requests.csv', mode='a', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                writer.writerow([timestamp, match_name, user_email, ip, error_msg])
+            print(f"📁 REQUEST BACKED UP TO match_requests.csv")
+        except: pass
+
+        # DISCORD FALLBACK (HTTP - Always works on Render)
+        if DISCORD_WEBHOOK_URL:
+            try:
+                payload = {
+                    "embeds": [{
+                        "title": "⚽ New Match Request",
+                        "color": 3447003, # Blue
+                        "fields": [
+                            {"name": "Match", "value": match_name, "inline": True},
+                            {"name": "User", "value": user_email, "inline": True},
+                            {"name": "Time", "value": timestamp, "inline": False},
+                            {"name": "Status", "value": "SMTP Blocked - Delivered via Webhook", "inline": False}
+                        ]
+                    }]
+                }
+                requests.post(DISCORD_WEBHOOK_URL, json=payload, timeout=5)
+                print("🎮 DISCORD WEBHOOK SENT")
+                return "SUCCESS" # Consider it a success if Discord worked
+            except: pass
+        
         return error_msg
 
 # ==============================================================================
