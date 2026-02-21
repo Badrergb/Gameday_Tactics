@@ -1,4 +1,4 @@
-id,fixture,competition,round,date,score,filename
-m1,Inter vs Milan,Serie A,Week 12,24-Nov-25,0 - 1,raw_match_data.txt
-m2,Real Madrid vs Man City,UEFA Champions League,Group Stage,11-Dec-25,1-2,Ralmadridvsmancity.txt
-
+id,fixture,competition,round,date,score,filename,Match Name,Date,Result
+m1,Inter vs Milan,Serie A,Week 12,24-Nov-25,0 - 1,raw_match_data.txt,,,
+m2,Real Madrid vs Man City,UEFA Champions League,Group Stage,11-Dec-25,1-2,Ralmadridvsmancity.txt,,,
+,,,,,,,Girona vs Barcelona,16-Feb-2026,2:1
