@@ -509,17 +509,21 @@
             btn.style.cursor = 'not-allowed';
 
             try {
-                // 3. API Call
-                const response = await fetch('/api/match-request', {
+                // 3. API Call (Using absolute path to rule out resolution issues)
+                const apiUrl = window.location.origin + '/api/match-request';
+                const response = await fetch(apiUrl, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
                     body: JSON.stringify({ match: matchName, email: userEmail })
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
-                    status.innerText = data.message;
+                    status.innerText = data.message || "Request sent successfully!";
                     status.style.color = '#38bdf8';
                     input.value = '';
                     emailInput.value = '';
@@ -528,9 +532,9 @@
                     status.style.color = '#ef4444';
                 }
             } catch (error) {
-                status.innerText = "Server unreachable. Please check backend.";
+                status.innerText = "Error: " + error.message;
                 status.style.color = '#ef4444';
-                console.error('Fetch error:', error);
+                console.error('Detailed Fetch error:', error);
             } finally {
                 // 4. Reset Button
                 btn.disabled = false;
