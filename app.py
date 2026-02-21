@@ -47,6 +47,11 @@ SENDER_EMAIL = "narayananbadre@gmail.com"        # REPLACE THIS
 SENDER_PASSWORD = "wzdp tzib agoh ypdt"      # REPLACE WITH 16-CHAR APP PASSWORD
 RECEIVER_EMAIL = "narayananbadre@gmail.com"      # REPLACE THIS
 
+# 🚀 BREVO API CONFIGURATION (Bypasses Render SMTP Block)
+# 1. Get a FREE API Key from https://www.brevo.com/ (Takes 1 min)
+# 2. Paste it here or set it as 'BREVO_API_KEY' in Render dashboard
+BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "") 
+
 # Optional Discord Webhook for Render (Works even if SMTP is blocked)
 DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "") # Paste your URL here or set in Render
 
@@ -256,7 +261,32 @@ def send_match_request_email_v2(match_name, user_email, ip):
         body = f"""New match requested.\n\nMatch: {match_name}\nRequested By: {user_email}\nTime: {timestamp}\nIP: {ip}\n\nReply directly to this email to respond to the user."""
         msg.attach(MIMEText(body, 'plain'))
 
-        # Try Port 587 (TLS) first, then fallback to 465 (SSL)
+        # METHOD A: BREVO API (HTTP - Recommended for Render)
+        if BREVO_API_KEY:
+            try:
+                print(f"📡 SMTP: Trying Brevo API (HTTP 443)...")
+                api_url = "https://api.brevo.com/v3/smtp/email"
+                api_headers = {
+                    "api-key": BREVO_API_KEY,
+                    "content-type": "application/json"
+                }
+                api_payload = {
+                    "sender": {"name": "Match Dashboard", "email": SENDER_EMAIL},
+                    "to": [{"email": RECEIVER_EMAIL}],
+                    "replyTo": {"email": user_email},
+                    "subject": f"New Match Request: {match_name}",
+                    "textContent": body
+                }
+                api_res = requests.post(api_url, json=api_payload, headers=api_headers, timeout=10)
+                if api_res.status_code in [201, 200]:
+                    print(f"✅ BREVO API SUCCESS: {match_name}")
+                    return "SUCCESS"
+                else:
+                    print(f"⚠️ BREVO API FAILED: {api_res.text}")
+            except Exception as api_err:
+                print(f"⚠️ BREVO API ERROR: {api_err}")
+
+        # METHOD B: Port 587 (TLS Fallback)
         try:
             print(f"📡 SMTP: Trying 587 (TLS)...")
             server = smtplib.SMTP('smtp.gmail.com', 587, timeout=15)
