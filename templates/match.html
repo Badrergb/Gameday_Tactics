@@ -400,6 +400,112 @@
             filter: brightness(1.1);
         }
 
+        /* --- MOBILE RESPONSIVENESS --- */
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 350px;
+            }
+
+            .sidebar-view {
+                width: 350px;
+            }
+
+            .switch-btn {
+                width: 250px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                overflow-y: auto;
+                /* Unlock scroll for mobile flow */
+            }
+
+            .analysis-screen {
+                height: auto;
+                min-height: 100vh;
+            }
+
+            .top-bar {
+                height: auto;
+                padding: 15px;
+                grid-template-columns: 1fr;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .header-left {
+                justify-content: center;
+            }
+
+            .header-stats {
+                display: none;
+                /* Hide secondary stats on mobile to save space */
+            }
+
+            .score-box {
+                margin: 10px 0;
+                height: 50px;
+                font-size: 32px;
+                width: fit-content;
+                align-self: center;
+                border-left: none;
+                border-right: none;
+            }
+
+            .team-display {
+                font-size: 20px;
+            }
+
+            .team-switch {
+                height: auto;
+                flex-direction: column;
+            }
+
+            .switch-btn {
+                width: 100%;
+                height: 60px;
+                border: none;
+                border-bottom: 1px solid #1f2330;
+            }
+
+            .main-content {
+                flex-direction: column;
+                height: auto;
+                overflow: visible;
+            }
+
+            .viz-panel {
+                height: 50vh;
+                width: 100%;
+                border-bottom: 2px solid #1f2330;
+                padding: 20px 0;
+            }
+
+            .sidebar {
+                width: 100% !important;
+                border-left: none;
+                height: auto;
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+            .sidebar.collapsed {
+                display: none;
+                /* On mobile, collapsed should fully disappear */
+            }
+
+            .sidebar-view {
+                width: 100%;
+            }
+
+            /* Floating Buttons Mobile Adjustments */
+            .fab-container {
+                bottom: 20px;
+                right: 20px;
+            }
+        }
+
         /* 5. GOLBAL MODAL SYSTEM (Legacy cleanup) */
         .ai-modal {
             position: fixed;
