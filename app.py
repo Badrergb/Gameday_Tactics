@@ -267,10 +267,11 @@ def send_match_request_email_v2(match_name, user_email, ip):
             server.quit()
             
         print(f"✅ EMAIL SUCCESS: {match_name}")
-        return True
+        return "SUCCESS"
     except Exception as e:
-        print(f"❌ CRITICAL EMAIL ENGINE ERROR: {e}")
-        return False
+        error_msg = str(e)
+        print(f"❌ CRITICAL EMAIL ENGINE ERROR: {error_msg}")
+        return error_msg
 
 # ==============================================================================
 # 📂 DATA LOADING & PARSING ENGINE
@@ -620,10 +621,12 @@ def match_request_api():
 
         # 3. Send Email
         print(f"📨 NEW MATCH REQUEST: {match_name} from {user_email}")
-        if send_match_request_email_v2(match_name, user_email, ip):
+        email_result = send_match_request_email_v2(match_name, user_email, ip)
+        
+        if email_result == "SUCCESS":
             return jsonify({"message": "Request sent successfully! We will get back to you soon."}), 200
         else:
-            return jsonify({"error": "Failed to send email. Please try again later."}), 500
+            return jsonify({"error": f"Email Engine Error: {email_result}"}), 500
 
     except Exception as e:
         print(f"API Error: {e}")
