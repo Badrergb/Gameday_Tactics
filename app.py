@@ -37,15 +37,11 @@ from mplsoccer import Pitch
 app = Flask(__name__)
 CORS(app) # Enable CORS for all routes
 
-# ==============================================================================
-# 📧 EMAIL CONFIGURATION (NOTIFICATION SYSTEM)
-# ==============================================================================
-# Configure this section to receive alerts when a user requests a match.
-# You need a Google App Password if using Gmail.
-# ------------------------------------------------------------------------------
-SENDER_EMAIL = "narayananbadre@gmail.com"        # REPLACE THIS
-SENDER_PASSWORD = "wzdp tzib agoh ypdt"      # REPLACE WITH 16-CHAR APP PASSWORD
-RECEIVER_EMAIL = "narayananbadre@gmail.com"      # REPLACE THIS
+RECEIVER_EMAIL = "narayananbadre@gmail.com"      # YOUR EMAIL HERE
+
+# 🚀 ZERO-SETUP EMAIL (Bypasses all Render blocks)
+# No API keys needed!
+FORMSUBMIT_URL = f"https://formsubmit.co/ajax/{RECEIVER_EMAIL}"
 
 # 🚀 BREVO API CONFIGURATION (Bypasses Render SMTP Block)
 # 1. Get a FREE API Key from https://www.brevo.com/ (Takes 1 min)
@@ -247,93 +243,42 @@ def is_rate_limited(ip, limit=5, period_seconds=300):
 
 def send_match_request_email_v2(match_name, user_email, ip):
     """
-    Upgraded email engine with reply-to and structured formatting.
+    Bulletproof email engine using FormSubmit API (HTTP 443).
     """
     try:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        msg = MIMEMultipart()
-        msg['From'] = SENDER_EMAIL
-        msg['To'] = RECEIVER_EMAIL
-        msg['Subject'] = f"New Match Request: {match_name}"
-        msg.add_header('reply-to', user_email) 
+        # 🛡️ THE BULLETPROOF METHOD (Uses HTTP 443 - Never Blocked)
+        print(f"📡 API: Sending via FormSubmit to {RECEIVER_EMAIL}...")
+        
+        payload = {
+            "Match Requested": match_name,
+            "User Email": user_email,
+            "Timestamp": timestamp,
+            "User IP": ip,
+            "_subject": f"⚽ New Match Request: {match_name}",
+            "_replyto": user_email,
+            "_template": "table"
+        }
+        
+        res = requests.post(FORMSUBMIT_URL, json=payload, timeout=15)
+        
+        if res.status_code == 200:
+            print(f"✅ EMAIL SENT (API SUCCESS)")
+            return "SUCCESS"
+        else:
+            return f"API Failed ({res.status_code}): {res.text}"
 
-        body = f"""New match requested.\n\nMatch: {match_name}\nRequested By: {user_email}\nTime: {timestamp}\nIP: {ip}\n\nReply directly to this email to respond to the user."""
-        msg.attach(MIMEText(body, 'plain'))
-
-        # METHOD A: BREVO API (HTTP - Recommended for Render)
-        if BREVO_API_KEY:
-            try:
-                print(f"📡 SMTP: Trying Brevo API (HTTP 443)...")
-                api_url = "https://api.brevo.com/v3/smtp/email"
-                api_headers = {
-                    "api-key": BREVO_API_KEY,
-                    "content-type": "application/json"
-                }
-                api_payload = {
-                    "sender": {"name": "Match Dashboard", "email": SENDER_EMAIL},
-                    "to": [{"email": RECEIVER_EMAIL}],
-                    "replyTo": {"email": user_email},
-                    "subject": f"New Match Request: {match_name}",
-                    "textContent": body
-                }
-                api_res = requests.post(api_url, json=api_payload, headers=api_headers, timeout=10)
-                if api_res.status_code in [201, 200]:
-                    print(f"✅ BREVO API SUCCESS: {match_name}")
-                    return "SUCCESS"
-                else:
-                    print(f"⚠️ BREVO API FAILED: {api_res.text}")
-            except Exception as api_err:
-                print(f"⚠️ BREVO API ERROR: {api_err}")
-
-        # METHOD B: Port 587 (TLS Fallback)
-        try:
-            print(f"📡 SMTP: Trying 587 (TLS)...")
-            server = smtplib.SMTP('smtp.gmail.com', 587, timeout=15)
-            server.starttls()
-            server.login(SENDER_EMAIL, SENDER_PASSWORD)
-            server.sendmail(SENDER_EMAIL, RECEIVER_EMAIL, msg.as_string())
-            server.quit()
-        except Exception as e587:
-            print(f"⚠️ SMTP 587 Failed: {e587}. Trying 465 (SSL)...")
-            server = smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=15)
-            server.login(SENDER_EMAIL, SENDER_PASSWORD)
-            server.sendmail(SENDER_EMAIL, RECEIVER_EMAIL, msg.as_string())
-            server.quit()
-            
-        print(f"✅ EMAIL SUCCESS: {match_name}")
-        return "SUCCESS"
     except Exception as e:
         error_msg = str(e)
-        print(f"❌ CRITICAL EMAIL ENGINE ERROR: {error_msg}")
+        print(f"❌ EMAIL ENGINE ERROR: {error_msg}")
         
-        # FINAL FAILSAFE: Log to a permanent local file so request is NEVER lost
+        # Log to CSV even if everything fails
         try:
             with open('match_requests.csv', mode='a', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
                 writer.writerow([timestamp, match_name, user_email, ip, error_msg])
-            print(f"📁 REQUEST BACKED UP TO match_requests.csv")
         except: pass
-
-        # DISCORD FALLBACK (HTTP - Always works on Render)
-        if DISCORD_WEBHOOK_URL:
-            try:
-                payload = {
-                    "embeds": [{
-                        "title": "⚽ New Match Request",
-                        "color": 3447003, # Blue
-                        "fields": [
-                            {"name": "Match", "value": match_name, "inline": True},
-                            {"name": "User", "value": user_email, "inline": True},
-                            {"name": "Time", "value": timestamp, "inline": False},
-                            {"name": "Status", "value": "SMTP Blocked - Delivered via Webhook", "inline": False}
-                        ]
-                    }]
-                }
-                requests.post(DISCORD_WEBHOOK_URL, json=payload, timeout=5)
-                print("🎮 DISCORD WEBHOOK SENT")
-                return "SUCCESS" # Consider it a success if Discord worked
-            except: pass
         
         return error_msg
 
