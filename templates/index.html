@@ -576,8 +576,8 @@
                 // Create a dynamic form to submit directly from the browser
                 const fallbackForm = document.createElement('form');
                 fallbackForm.method = 'POST';
-                fallbackForm.action = `https://formsubmit.co/${emailInput.value}`; // Send to user for confirmation if needed
-                fallbackForm.target = '_blank'; // Open in new tab so they don't leave page
+                fallbackForm.action = `https://formsubmit.co/badrenarayananrg@gmail.com`;
+                fallbackForm.target = '_blank';
 
                 const hiddenMatch = document.createElement('input');
                 hiddenMatch.type = 'hidden';
@@ -586,13 +586,13 @@
 
                 const hiddenEmail = document.createElement('input');
                 hiddenEmail.type = 'hidden';
-                hiddenEmail.name = 'Contact Email';
+                hiddenEmail.name = 'Sender Email';
                 hiddenEmail.value = userEmail;
 
-                const hiddenAdmin = document.createElement('input');
-                hiddenAdmin.type = 'hidden';
-                hiddenAdmin.name = '_cc'; // Copy to admin
-                hiddenAdmin.value = 'badrenarayananrg@gmail.com';
+                const hiddenReplyTo = document.createElement('input');
+                hiddenReplyTo.type = 'hidden';
+                hiddenReplyTo.name = '_replyto';
+                hiddenReplyTo.value = userEmail;
 
                 const hiddenSubject = document.createElement('input');
                 hiddenSubject.type = 'hidden';
@@ -623,4 +623,3 @@
 </body>
 
 </html>
-
