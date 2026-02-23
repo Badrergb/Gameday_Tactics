@@ -2,3 +2,4 @@ id,fixture,competition,round,date,score,filename
 m1,Inter vs Milan,Serie A,Week 12,24-Nov-25,0 - 1,raw_match_data.txt
 m2,Real Madrid vs Man City,UEFA Champions League,Group Stage,11-Dec-25,1-2,Ralmadridvsmancity.txt
 m3,Athletic Club vs Elche,LaLiga,Matchday,20-Feb-26,2 - 1,athleticclubvselche.txt
+m4,Real Madrid vs Barcelona,Unknown,Unknown,2026-02-23,Unknown,realmadridvsbarcelona.txt
