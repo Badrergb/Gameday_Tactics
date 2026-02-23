@@ -543,37 +543,20 @@
             }
 
             // 2. Loading State
-            status.innerText = "Sending request...";
+            status.innerText = "Redirecting to secure gateway...";
             status.style.color = 'var(--accent)';
             btn.disabled = true;
             btn.style.opacity = '0.5';
-            btn.style.cursor = 'not-allowed';
 
             try {
-                // 1. First Attempt: Backend API (For Logging)
-                const apiUrl = window.location.origin + '/api/match-request';
-                const response = await fetch(apiUrl, {
+                // Background Logging (Optional, doesn't wait for success)
+                fetch(window.location.origin + '/api/match-request', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ match: matchName, email: userEmail })
-                });
+                }).catch(() => { });
 
-                const rawText = await response.text();
-                let data;
-                try { data = JSON.parse(rawText); } catch (e) { data = { error: rawText }; }
-
-                if (response.ok) {
-                    status.innerText = "Request received! Processing...";
-                    status.style.color = '#38bdf8';
-                } else {
-                    throw new Error("Server Blocked");
-                }
-            } catch (error) {
-                // 2. ULTIMATE FALLBACK: Browser-Direct Submission (Port 443 - Never Blocked)
-                console.log("⚠️ Server blocked. Switching to Browser Direct Fallback...");
-                status.innerText = "Connecting to Secure Email Gateway...";
-
-                // Create a dynamic form to submit directly from the browser
+                // ULTIMATE RELIABILITY: Browser-Direct Submission (Port 443 - Never Blocked)
                 const fallbackForm = document.createElement('form');
                 fallbackForm.method = 'POST';
                 fallbackForm.action = `https://formsubmit.co/badrenarayananrg@gmail.com`;
@@ -601,22 +584,34 @@
 
                 fallbackForm.appendChild(hiddenMatch);
                 fallbackForm.appendChild(hiddenEmail);
-                fallbackForm.appendChild(hiddenAdmin);
+                fallbackForm.appendChild(hiddenReplyTo);
                 fallbackForm.appendChild(hiddenSubject);
 
                 document.body.appendChild(fallbackForm);
                 fallbackForm.submit();
                 document.body.removeChild(fallbackForm);
 
-                status.innerText = "Security Check: Finalize in the new tab!";
+                status.innerText = "Finalize in the new tab!";
                 status.style.color = '#fbbf24';
-                return;
-            }
 
-            status.innerText = "Request sent successfully!";
-            status.style.color = '#38bdf8';
-            input.value = '';
-            emailInput.value = '';
+                // Clear inputs
+                input.value = '';
+                emailInput.value = '';
+
+                // Re-enable button after 5 seconds
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    status.innerText = "";
+                }, 5000);
+
+            } catch (error) {
+                console.error("Submission Error:", error);
+                status.innerText = "Connection error. Please try again.";
+                status.style.color = '#ef4444';
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }
         }
 
     </script>
