@@ -628,14 +628,12 @@ def match_request_api():
         # 2. Sanitization (Simple string cleaning)
         match_name = match_name.replace('<', '&lt;').replace('>', '&gt;')
 
-        # 3. Send Email
-        print(f"📨 NEW MATCH REQUEST: {match_name} from {user_email}")
-        email_result = send_match_request_email_v2(match_name, user_email, ip)
+        # 3. Log the request
+        print(f"📨 NEW MATCH REQUEST LOGGED: {match_name} from {user_email} (IP: {ip})")
         
-        if email_result == "SUCCESS":
-            return jsonify({"message": "Request sent successfully! We will get back to you soon."}), 200
-        else:
-            return jsonify({"error": f"Email Engine Error: {email_result}"}), 500
+        # We handle the actual email delivery via direct FormSubmit in the frontend
+        # to ensure reliability and provide visual confirmation to the user.
+        return jsonify({"message": "Request logged successfully."}), 200
 
     except Exception as e:
         print(f"API Error: {e}")
@@ -888,4 +886,3 @@ if __name__ == '__main__':
     # Threaded mode allows multiple requests to be handled simultaneously
     print("🚀 Gameday Tactics Server Starting...")
     app.run(debug=True, threaded=True)
-
