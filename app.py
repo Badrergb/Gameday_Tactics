@@ -37,7 +37,7 @@ from mplsoccer import Pitch
 app = Flask(__name__)
 CORS(app) # Enable CORS for all routes
 
-RECEIVER_EMAIL = "narayananbadre@gmail.com"      # YOUR EMAIL HERE
+RECEIVER_EMAIL = "badrenarayananrg@gmail.com"      # YOUR EMAIL HERE
 
 # 🚀 ZERO-SETUP EMAIL (Bypasses all Render blocks)
 # No API keys needed!
@@ -888,3 +888,4 @@ if __name__ == '__main__':
     # Threaded mode allows multiple requests to be handled simultaneously
     print("🚀 Gameday Tactics Server Starting...")
     app.run(debug=True, threaded=True)
+
