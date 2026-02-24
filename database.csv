@@ -2,4 +2,4 @@ id,fixture,competition,round,date,score,filename
 m1,Inter vs Milan,Serie A,Week 12,24-Nov-25,0 - 1,raw_match_data.txt
 m2,Real Madrid vs Man City,UEFA Champions League,Group Stage,11-Dec-25,1-2,Ralmadridvsmancity.txt
 m3,Real Madrid vs Barcelona,LaLiga,Regular Season,26-10-25,2 - 1,realmadridvsbarcelona.txt
-
+m7963,Manchester United vs Manchester City,Premier League,Week 22,17-01-26,2 - 0,manutd_vs_mancity_tactics.txt
