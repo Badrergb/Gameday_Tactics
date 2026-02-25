@@ -1,0 +1,1 @@
+{"matchId": 1946372, "matchCentreData": {"playerIdNameDictionary": {"514810": "Franco Mastantuono", "73798": "Thibaut Courtois"}, "formationIdNameMappings": {"2": "442", "4": "433", "12": "352"}}}
