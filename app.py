@@ -1,4 +1,5 @@
 import os
+os.environ['MPLCONFIGDIR'] = '/tmp'
 import re
 import io
 import base64
@@ -9,6 +10,8 @@ import chompjs
 import numpy as np
 import pandas as pd
 import networkx as nx
+import matplotlib
+matplotlib.use('Agg')
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -887,4 +890,5 @@ if __name__ == '__main__':
     # Threaded mode allows multiple requests to be handled simultaneously
     print("🚀 Gameday Tactics Server Starting...")
     app.run(debug=True, threaded=True)
+
 
