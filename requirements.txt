@@ -1,11 +1,6 @@
-Flask==3.0.0
-flask-cors==4.0.0
-pandas==2.1.4
-numpy==1.26.3
-networkx==3.2.1
-matplotlib==3.8.2
-mplsoccer==1.2.3
-chompjs==1.1.2
-groq==0.4.2
-gunicorn==21.2.0
-requests==2.31.0
+flask
+pandas
+networkx
+matplotlib
+mplsoccer
+groq
