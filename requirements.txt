@@ -6,3 +6,4 @@ mplsoccer
 groq
 requests
 gunicorn
+chompjs
