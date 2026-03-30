@@ -7,3 +7,4 @@ groq
 requests
 gunicorn
 chompjs
+flask_cors
