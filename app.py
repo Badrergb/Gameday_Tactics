@@ -470,11 +470,11 @@ def generate_graph_image(events, tid, tname, starters, assigned_color, min_passe
             pair_stats[key] = pair_stats.get(key, 0) + 1
 
     # --- DRAWING THE PITCH ---
-    BG_COLOR = '#11151e' # Deep Navy/Black Theme
+    BG_COLOR = '#1e5d28' # Professional Pitch Green
     MAIN_COLOR = assigned_color
     SUB_COLOR = '#ff8c00' # Neon Orange for Substitutes
     
-    pitch = Pitch(pitch_type='opta', pitch_color=BG_COLOR, line_color='#444', linewidth=1)
+    pitch = Pitch(pitch_type='opta', pitch_color=BG_COLOR, line_color='#ffffff', linewidth=1)
     fig, ax = pitch.draw(figsize=(16, 10))
     fig.set_facecolor(BG_COLOR)
 
@@ -886,6 +886,3 @@ if __name__ == '__main__':
     # Threaded mode allows multiple requests to be handled simultaneously
     print("🚀 Gameday Tactics Server Starting...")
     app.run(debug=True, threaded=True)
-
-
-
